@@ -18,6 +18,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +57,11 @@ export default function RegisterPage() {
       if (signUpError) throw signUpError;
 
       if (data.user) {
-        alert('Registration successful! Please check your email to verify your account.');
-        router.push('/auth/login');
+        setSuccess(true);
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          router.push('/auth/login');
+        }, 3000);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
@@ -69,17 +73,77 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
-              Sign in
+        {success ? (
+          // Success Screen
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100 mb-6">
+              <svg
+                className="h-16 w-16 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
+              Registration Successful!
+            </h2>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+              <div className="flex items-start">
+                <svg
+                  className="h-6 w-6 text-blue-600 mr-3 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-blue-900 mb-1">
+                    Verify your email address
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    We've sent a verification link to <strong>{formData.email}</strong>. 
+                    Please check your inbox and click the link to activate your account.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Redirecting to login page in 3 seconds...
+            </p>
+            <Link
+              href="/auth/login"
+              className="text-primary-600 hover:text-primary-500 font-medium"
+            >
+              Go to login now →
             </Link>
-          </p>
-        </div>
+          </div>
+        ) : (
+          // Registration Form
+          <>
+            <div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your account
+              </h2>
+              <p className="mt-2 text-center text-sm text-gray-600">
+                Already have an account?{' '}
+                <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
+                  Sign in
+                </Link>
+              </p>
+            </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           {error && (
@@ -135,10 +199,12 @@ export default function RegisterPage() {
             />
           </div>
 
-          <Button type="submit" fullWidth loading={loading}>
-            Create account
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? 'Creating account...' : 'Create account'}
           </Button>
         </form>
+          </>
+        )}
       </div>
     </div>
   );
