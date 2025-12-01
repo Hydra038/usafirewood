@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and user dashboard
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /cart
+
+# Sitemap
+Sitemap: https://firewoodusa.com/sitemap.xml
