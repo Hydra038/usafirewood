@@ -132,18 +132,18 @@ function LoginForm() {
           </div>
 
           <div className="space-y-3">
-            <Button type="submit" fullWidth loading={loading}>
-              Sign in
+            <Button type="submit" className="w-full" loading={loading} disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in'}
             </Button>
 
             <Button
               type="button"
-              variant="outline"
-              fullWidth
+              variant="secondary"
+              className="w-full"
               onClick={handleMagicLink}
               disabled={!email || loading}
             >
-              Send magic link
+              {loading ? 'Sending link...' : 'Send magic link'}
             </Button>
           </div>
         </form>

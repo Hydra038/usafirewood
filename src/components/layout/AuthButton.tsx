@@ -77,8 +77,12 @@ export default function AuthButton({ onAction }: AuthButtonProps = {}) {
 
   if (loading) {
     return (
-      <div className="bg-gray-300 text-gray-300 px-4 py-2 rounded cursor-wait">
-        Loading...
+      <div className="bg-gray-300 text-gray-600 px-3 py-2 md:px-4 md:py-2 rounded cursor-wait text-sm md:text-base flex items-center gap-2">
+        <svg className="w-4 h-4 md:w-5 md:h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Loading...</span>
       </div>
     );
   }
@@ -87,20 +91,28 @@ export default function AuthButton({ onAction }: AuthButtonProps = {}) {
     const dashboardUrl = userRole === 'admin' ? '/admin' : '/dashboard';
     
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 md:gap-2">
         <Link
           href={dashboardUrl}
-          className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded transition"
+          className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 md:px-4 md:py-2 rounded transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap font-medium"
           onClick={handleDashboardClick}
         >
-          Dashboard
+          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+          <span>Dashboard</span>
         </Link>
         <button
           onClick={handleSignOut}
-          className="text-gray-700 hover:text-primary-600 transition px-2"
+          className="text-gray-700 hover:text-primary-600 transition px-1 md:px-2"
           title="Sign Out"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -116,10 +128,10 @@ export default function AuthButton({ onAction }: AuthButtonProps = {}) {
   return (
     <Link
       href="/auth/login"
-      className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded transition flex items-center gap-2"
+      className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 md:px-4 md:py-2 rounded transition flex items-center gap-2 text-sm md:text-base whitespace-nowrap font-medium"
       onClick={onAction}
     >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -127,7 +139,7 @@ export default function AuthButton({ onAction }: AuthButtonProps = {}) {
           d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
         />
       </svg>
-      Sign In
+      <span>Sign In</span>
     </Link>
   );
 }

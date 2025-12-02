@@ -9,10 +9,13 @@ export default async function AdminOrdersPage() {
   return (
     <AdminLayout>
       <div>
-        <h1 className="text-3xl font-bold mb-8">Orders</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Orders</h1>
 
+        {/* Mobile: Show as cards, Desktop: Show as table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="w-full">
+          {/* Desktop Table View - Hidden on mobile */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -125,6 +128,88 @@ export default async function AdminOrdersPage() {
               ))}
             </tbody>
           </table>
+          </div>
+
+          {/* Mobile Card View - Visible only on mobile */}
+          <div className="lg:hidden divide-y">
+            {orders.map((order: any) => (
+              <div key={order.id} className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <div className="font-semibold text-lg">#{order.id.slice(0, 8)}</div>
+                    <div className="text-sm text-gray-600">{order.customer_name}</div>
+                    <div className="text-xs text-gray-500">{order.customer_email}</div>
+                  </div>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      order.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : order.status === 'processing'
+                        ? 'bg-blue-100 text-blue-800'
+                        : order.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : order.status === 'cancelled'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                  >
+                    {order.status}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                  <div>
+                    <span className="text-gray-500">Date:</span>
+                    <div className="font-medium">{formatDate(order.created_at)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Total:</span>
+                    <div className="font-semibold text-lg">{formatCurrency(order.total)}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Payment:</span>
+                    <div>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-semibold inline-block ${
+                          order.payment_status === 'paid'
+                            ? 'bg-green-100 text-green-800'
+                            : order.payment_status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {order.payment_status}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Proof:</span>
+                    <div>
+                      {order.payment_proof_url ? (
+                        <a
+                          href={order.payment_proof_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-600 text-xs"
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-400">None</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <Link
+                  href={`/admin/orders/${order.id}`}
+                  className="block w-full text-center bg-primary-600 text-white py-2 rounded hover:bg-primary-700 transition"
+                >
+                  View Details
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </AdminLayout>

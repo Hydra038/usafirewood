@@ -126,7 +126,7 @@ export default function ForgotPasswordPage() {
           />
 
           <div className="space-y-3">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" loading={loading} disabled={loading}>
               {loading ? 'Sending...' : 'Send reset link'}
             </Button>
 

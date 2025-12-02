@@ -195,7 +195,7 @@ function ResetPasswordForm() {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" loading={loading} disabled={loading}>
             {loading ? 'Resetting password...' : 'Reset password'}
           </Button>
         </form>
