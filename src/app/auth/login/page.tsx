@@ -1,161 +1,195 @@
-'use client';
+﻿'use client';
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 
-function LoginForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/';
-  const callbackError = searchParams.get('error');
-  
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(callbackError || '');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Reset error
     setError('');
+    
+    // Validate inputs before starting
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Start loading
     setLoading(true);
+    console.log('🔵 Login attempt started for:', email);
 
     try {
       const supabase = createClient();
+      console.log('🔵 Supabase client created');
+      
+      console.log('🔵 Attempting signInWithPassword...');
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
       });
 
-      if (signInError) throw signInError;
+      console.log('🔵 Sign in response:', { data, signInError });
 
-      // Check user role
-      const { data: profile } = await supabase
+      // Handle sign-in errors with user-friendly messages
+      if (signInError) {
+        console.error('🔴 Sign in error:', signInError);
+        
+        // Parse specific error messages
+        const errorMessage = signInError.message.toLowerCase();
+        if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (errorMessage.includes('email not confirmed')) {
+          setError('Please verify your email address. Check your inbox for the verification link.');
+        } else if (errorMessage.includes('user not found')) {
+          setError('No account found with this email. Please sign up first.');
+        } else {
+          setError(signInError.message);
+        }
+        
+        setLoading(false);
+        return;
+      }
+
+      // Verify user exists in response
+      if (!data || !data.user) {
+        console.error('🔴 No user in response');
+        setError('Sign in failed - no user data returned. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🟢 User signed in:', data.user.email);
+      console.log('🔵 Fetching user profile...');
+      
+      // Fetch user role - don't fail if profile doesn't exist
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
         .single();
 
-      // Redirect based on role - admins always go to admin dashboard
-      if (profile?.role === 'admin') {
-        router.push('/admin');
+      if (profileError) {
+        console.warn('⚠️ Profile fetch warning:', profileError);
+      }
+
+      console.log('🔵 Profile data:', { profile, profileError });
+
+      // Only allow admin users to login
+      const userRole = profile?.role || 'customer';
+      if (userRole !== 'admin') {
+        console.error('🔴 Non-admin user attempted login');
+        await supabase.auth.signOut();
+        setError('Access denied. This login is for administrators only.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🟢 Admin verified, redirecting to admin dashboard');
+      
+      // Redirect to admin dashboard
+      router.push('/admin');
+      router.refresh();
+
+    } catch (err: any) {
+      console.error('🔴 Login exception:', err);
+      
+      // Handle network and other errors
+      if (err.message?.includes('fetch')) {
+        setError('Network error. Please check your internet connection and try again.');
+      } else if (err.message?.includes('timeout')) {
+        setError('Request timed out. Please try again.');
       } else {
-        router.push(redirectUrl);
+        setError(err.message || 'An unexpected error occurred. Please try again.');
       }
       
-      // Refresh to update navbar
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMagicLink = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (magicLinkError) throw magicLinkError;
-
-      alert('Check your email for the magic link!');
-    } catch (err: any) {
-      setError(err.message || 'Failed to send magic link');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
+          <h2 className="text-center text-3xl font-bold text-gray-900">Admin Sign In</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/auth/register" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
-            </Link>
+            Access restricted to administrators only
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+              {error}
             </div>
           )}
 
-          <div className="rounded-md shadow-sm space-y-4">
-            <Input
-              label="Email address"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="you@example.com"
+              />
+            </div>
 
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                href="/auth/forgot-password"
-                className="font-medium text-primary-600 hover:text-primary-500"
-              >
-                Forgot your password?
-              </Link>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="••••••••"
+              />
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Button type="submit" className="w-full" loading={loading} disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full"
-              onClick={handleMagicLink}
-              disabled={!email || loading}
+          <div className="flex items-center justify-between">
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-primary-600 hover:text-primary-500"
             >
-              {loading ? 'Sending link...' : 'Send magic link'}
-            </Button>
+              Forgot password?
+            </Link>
           </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
         </form>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <LoginForm />
-    </Suspense>
   );
 }

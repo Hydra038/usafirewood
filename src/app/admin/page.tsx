@@ -45,37 +45,37 @@ export default async function AdminDashboard() {
   return (
     <AdminLayout>
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-2">Total Products</div>
-            <div className="text-2xl sm:text-3xl font-bold text-primary-600">{productsCount || 0}</div>
+            <div className="text-3xl font-bold text-primary-600">{productsCount || 0}</div>
             <Link href="/admin/products" className="text-sm text-primary-600 hover:underline mt-2 inline-block">
               Manage →
             </Link>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-2">Total Orders</div>
-            <div className="text-2xl sm:text-3xl font-bold text-blue-600">{ordersCount || 0}</div>
+            <div className="text-3xl font-bold text-blue-600">{ordersCount || 0}</div>
             <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline mt-2 inline-block">
               View All →
             </Link>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-2">Pending Orders</div>
-            <div className="text-2xl sm:text-3xl font-bold text-orange-600">{pendingOrders || 0}</div>
+            <div className="text-3xl font-bold text-orange-600">{pendingOrders || 0}</div>
             <Link href="/admin/orders?status=pending" className="text-sm text-orange-600 hover:underline mt-2 inline-block">
               Review →
             </Link>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-2">Total Users</div>
-            <div className="text-2xl sm:text-3xl font-bold text-green-600">{usersCount || 0}</div>
+            <div className="text-3xl font-bold text-green-600">{usersCount || 0}</div>
             <Link href="/admin/users" className="text-sm text-green-600 hover:underline mt-2 inline-block">
               Manage →
             </Link>

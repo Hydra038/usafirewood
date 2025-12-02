@@ -18,12 +18,11 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16 gap-2">
+        <div className="flex justify-between items-center h-16">
           {/* Mobile menu button - LEFT SIDE */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden text-gray-700 flex-shrink-0"
-            aria-label="Toggle menu"
+            className="md:hidden text-gray-700"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {mobileMenuOpen ? (
@@ -44,12 +43,12 @@ export default function Navbar() {
             </svg>
           </button>
 
-          {/* Logo */}
+          {/* Logo - CENTERED ON MOBILE, LEFT ON DESKTOP */}
           <Link 
             href="/" 
-            className="text-lg sm:text-xl md:text-2xl font-bold text-wood-800 whitespace-nowrap flex-shrink-0"
+            className="text-2xl font-bold text-wood-800 md:flex-none absolute left-1/2 transform -translate-x-1/2 md:static md:transform-none"
           >
-            🔥 <span className="hidden xs:inline">Firewood USA</span><span className="xs:hidden">FireUSA</span>
+            🔥 Firewood USA
           </Link>
 
           {/* Desktop Navigation */}
@@ -68,8 +67,8 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Right Side - Cart & Account */}
-          <div className="flex items-center space-x-2 md:space-x-4">
+          {/* Right Side - Cart & Account (visible on mobile and desktop) */}
+          <div className="flex items-center space-x-4">
             <Link
               href="/cart"
               className="relative text-gray-700 hover:text-primary-600 transition"
@@ -89,7 +88,6 @@ export default function Navbar() {
               </svg>
               <CartCount />
             </Link>
-            {/* Auth button hidden on mobile, visible on desktop */}
             <div className="hidden md:block">
               <AuthButton />
             </div>
@@ -127,15 +125,9 @@ export default function Navbar() {
             >
               Contact
             </Link>
-            {/* Login link in mobile menu */}
-            <div className="pt-4 mt-2 border-t">
-              <Link
-                href="/auth/login"
-                className="block w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded transition text-center font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
+            {/* Admin button only shows if logged in as admin */}
+            <div className="py-2 border-t mt-2 pt-4">
+              <AuthButton onAction={() => setMobileMenuOpen(false)} />
             </div>
           </div>
         )}

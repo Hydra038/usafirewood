@@ -1,37 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    phone: '',
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    // Validate password strength
-    if (formData.password.length < 8) {
+    if (password.length < 8) {
       setError('Password must be at least 8 characters');
       return;
     }
@@ -41,170 +34,144 @@ export default function RegisterPage() {
     try {
       const supabase = createClient();
 
-      // Sign up user
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email,
+        password,
         options: {
           data: {
-            full_name: formData.fullName,
-            phone: formData.phone,
+            full_name: fullName,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
 
       if (data.user) {
         setSuccess(true);
-        // Redirect to login after 3 seconds
         setTimeout(() => {
-          router.push('/auth/login');
-        }, 3000);
+          router.push('/dashboard');
+        }, 2000);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to create account');
-    } finally {
+      console.error('Registration error:', err);
+      setError('Failed to create account. Please try again.');
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {success ? (
-          // Success Screen
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100 mb-6">
-              <svg
-                className="h-16 w-16 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-4">
-              Registration Successful!
-            </h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-              <div className="flex items-start">
-                <svg
-                  className="h-6 w-6 text-blue-600 mr-3 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-blue-900 mb-1">
-                    Verify your email address
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    We've sent a verification link to <strong>{formData.email}</strong>. 
-                    Please check your inbox and click the link to activate your account.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Redirecting to login page in 3 seconds...
-            </p>
-            <Link
-              href="/auth/login"
-              className="text-primary-600 hover:text-primary-500 font-medium"
-            >
-              Go to login now →
-            </Link>
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-        ) : (
-          // Registration Form
-          <>
-            <div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Create your account
-              </h2>
-              <p className="mt-2 text-center text-sm text-gray-600">
-                Already have an account?{' '}
-                <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
-                  Sign in
-                </Link>
-              </p>
-            </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Created!</h2>
+          <p className="text-gray-600">Redirecting to your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="text-center text-3xl font-bold text-gray-900">Create Account</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-primary-600 hover:text-primary-500 font-medium">
+              Sign in
+            </Link>
+          </p>
+        </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+              {error}
             </div>
           )}
 
           <div className="space-y-4">
-            <Input
-              label="Full Name"
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              required
-              autoComplete="name"
-            />
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="John Doe"
+              />
+            </div>
 
-            <Input
-              label="Email address"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-              autoComplete="email"
-            />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="you@example.com"
+              />
+            </div>
 
-            <Input
-              label="Phone (optional)"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              autoComplete="tel"
-            />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="••••••••"
+              />
+            </div>
 
-            <Input
-              label="Password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-              autoComplete="new-password"
-              helperText="Must be at least 8 characters"
-            />
-
-            <Input
-              label="Confirm Password"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              required
-              autoComplete="new-password"
-            />
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="••••••••"
+              />
+            </div>
           </div>
 
-          <Button type="submit" className="w-full" loading={loading} disabled={loading}>
-            {loading ? 'Creating account...' : 'Create account'}
-          </Button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          >
+            {loading ? 'Creating account...' : 'Create Account'}
+          </button>
         </form>
-          </>
-        )}
       </div>
     </div>
   );

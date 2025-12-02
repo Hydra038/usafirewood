@@ -118,127 +118,81 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient();
       
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Get current user (may be null for guests)
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (userError || !user) {
-        console.error('No user found, redirecting to login');
-        router.push('/auth/login?redirect=/checkout');
-        return;
+      console.log('Loading checkout data. User:', user?.id || 'guest');
+
+      // If user is logged in, try to load their profile data
+      if (user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('email, full_name, phone, address_line1, city, state, zip_code')
+          .eq('id', user.id)
+          .single();
+
+        if (profileData) {
+          // Pre-fill form with user's profile data
+          setFormData(prev => ({
+            ...prev,
+            customerEmail: profileData.email || user.email || '',
+            customerName: profileData.full_name || '',
+            customerPhone: profileData.phone || '',
+            deliveryAddress: profileData.address_line1 || '',
+            deliveryCity: profileData.city || '',
+            deliveryState: profileData.state || '',
+            deliveryZip: profileData.zip_code || '',
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            customerEmail: user.email || '',
+          }));
+        }
       }
 
-      console.log('Loading checkout data for user:', user.id);
+      // Get cart from localStorage (works for both guests and logged-in users)
+      const localCart = localStorage.getItem('cart');
+      if (localCart) {
+        const cartItems = JSON.parse(localCart);
+        
+        if (cartItems.length === 0) {
+          console.log('Cart is empty, redirecting');
+          router.push('/cart');
+          setLoading(false);
+          return;
+        }
 
-      // Get user's profile information
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, full_name, phone, address_line1, city, state, zip_code')
-        .eq('id', user.id)
-        .single();
+        // Fetch full product details for each cart item
+        const productIds = cartItems.map((item: any) => item.productId);
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('id, name, price, unit_type')
+          .in('id', productIds);
 
-      if (profileData) {
-        // Pre-fill form with user's profile data
-        setFormData(prev => ({
-          ...prev,
-          customerEmail: profileData.email || user.email || '',
-          customerName: profileData.full_name || '',
-          customerPhone: profileData.phone || '',
-          deliveryAddress: profileData.address_line1 || '',
-          deliveryCity: profileData.city || '',
-          deliveryState: profileData.state || '',
-          deliveryZip: profileData.zip_code || '',
-        }));
+        if (productsError) {
+          console.error('Error fetching products:', productsError);
+          throw new Error('Failed to load product details');
+        }
+
+        // Map cart items with full product details
+        const cartWithProducts = cartItems.map((item: any) => {
+          const product = productsData?.find(p => p.id === item.productId);
+          return {
+            id: item.productId,
+            quantity: item.quantity,
+            price_at_add: product?.price || 0,
+            product: product || { id: item.productId, name: 'Unknown', price: 0, unit_type: 'unit' }
+          };
+        });
+
+        setCart(cartWithProducts);
       } else {
-        // At minimum, use the email from auth
-        setFormData(prev => ({
-          ...prev,
-          customerEmail: user.email || '',
-        }));
-      }
-
-      // Get user's cart
-      const { data: cartData, error: cartError } = await supabase
-        .from('carts')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (cartError) {
-        console.error('Error fetching cart:', cartError);
-        throw new Error('Failed to load cart');
-      }
-
-      if (!cartData) {
-        console.log('No cart found for user, redirecting to cart page');
-        setLoading(false);
+        console.log('No cart found in localStorage');
         router.push('/cart');
-        return;
-      }
-
-      if (cartError) {
-        console.error('Error fetching cart:', cartError);
-        throw new Error('Failed to load cart');
-      }
-
-      if (!cartData) {
-        console.log('No cart found for user');
-        setCart([]);
         setLoading(false);
         return;
       }
-
-      console.log('Found cart:', cartData.id);
-
-      // Get cart items with product details
-      const { data: itemsData, error: itemsError } = await supabase
-        .from('cart_items')
-        .select(`
-          id,
-          quantity,
-          price_at_add,
-          products (
-            id,
-            name,
-            price,
-            unit_type
-          )
-        `)
-        .eq('cart_id', cartData.id);
-
-      if (itemsError) {
-        console.error('Error fetching cart items:', itemsError);
-        throw new Error('Failed to load cart items');
-      }
-
-      console.log('Loaded cart items:', itemsData?.length || 0);
-      console.log('Raw items data:', JSON.stringify(itemsData, null, 2));
-      
-      // Transform the data to match our CartItem type and filter out items with null products
-      const transformedItems = (itemsData || [])
-        .filter((item: any) => item.products !== null) // Filter out deleted products
-        .map((item: any) => ({
-          id: item.id,
-          quantity: item.quantity,
-          price_at_add: item.price_at_add,
-          product: {
-            id: item.products.id,
-            name: item.products.name,
-            price: item.products.price,
-            unit_type: item.products.unit_type
-          }
-        }));
-      
-      console.log('Transformed cart items:', transformedItems.length);
-      
-      // Check if cart is empty after filtering
-      if (transformedItems.length === 0) {
-        console.log('Cart is empty, redirecting to cart page');
-        setLoading(false);
-        router.push('/cart');
-        return;
-      }
-      
-      setCart(transformedItems);
 
       // Get payment methods from server action
       const paymentData = await getPaymentMethods();
